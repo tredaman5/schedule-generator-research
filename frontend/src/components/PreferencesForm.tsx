@@ -7,6 +7,7 @@ export interface Preferences {
   freeDays: Day[];
   events: CustomEvent[];
   goal: Goal;
+  lunchBreak: boolean;
 }
 
 interface Props {
@@ -80,6 +81,15 @@ export default function PreferencesForm({ prefs, onChange }: Props) {
             <option key={g.value} value={g.value}>{g.label}</option>
           ))}
         </select>
+      </label>
+
+      <label className="field" style={{ flexDirection: "row", alignItems: "center" }}>
+        <input
+          type="checkbox"
+          checked={prefs.lunchBreak}
+          onChange={(e) => update({ lunchBreak: e.target.checked })}
+        />
+        <span>Keep a 45-min lunch break (11:00-14:00)</span>
       </label>
 
       <div className="field">

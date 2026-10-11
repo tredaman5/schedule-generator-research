@@ -11,6 +11,7 @@ const DEFAULT_PREFS: Preferences = {
   freeDays: [],
   events: [],
   goal: "fewest_days",
+  lunchBreak: false,
 };
 
 export default function App() {
@@ -43,6 +44,7 @@ export default function App() {
         free_days: prefs.freeDays,
         events: prefs.events,
         goal: prefs.goal,
+        lunch_break: prefs.lunchBreak,
         max_results: 5,
       });
       setResult(response);

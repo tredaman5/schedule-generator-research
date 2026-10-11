@@ -39,6 +39,7 @@ export interface GenerateRequest {
   free_days: Day[];
   events: CustomEvent[];
   goal: Goal;
+  lunch_break: boolean;
   max_results: number;
 }
 

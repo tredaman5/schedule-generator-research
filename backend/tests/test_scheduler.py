@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.models import CustomEvent, GenerateRequest, Goal, Section
 from app.sample_data import load_courses
-from app.scheduler import compute_stats, generate
+from app.scheduler import compute_stats, generate, has_lunch_break
 
 CATALOG = load_courses()
 client = TestClient(app)
@@ -93,6 +93,20 @@ def test_stats_gap_and_hours():
     assert stats.total_gap_minutes == 60
     assert stats.class_hours_per_week == 2
     assert stats.free_days == ["Tue", "Wed", "Thu", "Fri"]
+
+
+# --- lunch break -------------------------------------------------------------
+
+def test_lunch_break_present_when_gap_in_window():
+    a = make_section(["Mon"], "10:00", "11:00", code="A 1")
+    b = make_section(["Mon"], "12:00", "13:00", code="B 1")  # 60 free minutes at 11:00-12:00
+    assert has_lunch_break([a, b])
+
+
+def test_back_to_back_classes_leave_no_lunch_break():
+    a = make_section(["Mon"], "11:00", "12:30", code="A 1")
+    b = make_section(["Mon"], "12:30", "14:00", code="B 1")  # no gap anywhere in 11-14
+    assert not has_lunch_break([a, b])
 
 
 # --- API ---------------------------------------------------------------------

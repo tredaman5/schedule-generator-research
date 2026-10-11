@@ -92,6 +92,7 @@ class GenerateRequest(BaseModel):
     free_days: list[str] = Field(default_factory=list, examples=[["Fri"]])
     events: list[CustomEvent] = Field(default_factory=list)
     goal: Goal = Goal.fewest_days
+    lunch_break: bool = False
     max_results: int = Field(default=5, ge=1, le=20)
 
     @field_validator("earliest_start", "latest_end")

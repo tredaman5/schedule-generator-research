@@ -28,6 +28,10 @@ from app.models import (
 
 MAX_COMBINATIONS = 200_000  # safety valve so a huge request can't hang the server
 
+LUNCH_START = 11 * 60  # 11:00 in minutes after midnight
+LUNCH_END = 14 * 60  # 14:00
+LUNCH_MINUTES = 45
+
 
 def _fmt(minutes: int) -> str:
     return f"{minutes // 60:02d}:{minutes % 60:02d}"
@@ -64,6 +68,29 @@ def compute_stats(sections: list[Section]) -> ScheduleStats:
         earliest_start=_fmt(min(s.start_min for s in sections)),
         total_credits=sum(s.credits for s in sections),
     )
+
+
+def _day_has_lunch(todays: list[Section]) -> bool:
+    """todays = that day's classes, sorted by start time."""
+    cursor = LUNCH_START  # everything before this is "used up"
+    for s in todays:
+        if s.end_min <= LUNCH_START:
+            continue  # class is over before the window opens
+        if s.start_min >= LUNCH_END:
+            break  # window is over, nothing later matters
+        if s.start_min - cursor >= LUNCH_MINUTES:
+            return True  # found a big enough gap before this class
+        cursor = max(cursor, s.end_min)
+    return LUNCH_END - cursor >= LUNCH_MINUTES  # gap after the last class
+
+
+def has_lunch_break(sections: list[Section]) -> bool:
+    """True if every class day has a free 45-minute window between 11:00 and 14:00."""
+    for day in DAYS:
+        todays = sorted((s for s in sections if day in s.days), key=lambda s: s.start_min)
+        if not _day_has_lunch(todays):
+            return False
+    return True
 
 
 def score(stats: ScheduleStats, goal: Goal) -> float:
@@ -120,9 +147,15 @@ def generate(req: GenerateRequest, catalog: dict[str, Course]) -> GenerateRespon
 
     backtrack(0, [])
 
+    if req.lunch_break:
+        before = len(found)
+        found = [sections for sections in found if has_lunch_break(sections)]
+        if before and not found:
+            warnings.append("Every conflict-free schedule is missing a 45-minute lunch break between 11:00 and 14:00.")
+
     if checked >= MAX_COMBINATIONS:
         warnings.append("Stopped early: too many combinations. Results may not be the very best.")
-    if not found:
+    if not found and not warnings:
         warnings.append("Every combination of these courses has a time conflict. Try removing a course or loosening a rule.")
 
     # --- 3. RANK -----------------------------------------------------------
